@@ -1,0 +1,46 @@
+{
+  "name": "first-react-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.5.0",
+    "@testing-library/user-event": "^7.2.1",
+    "env-cmd": "^10.1.0",
+    "http-server": "^0.12.3",
+    "pondjs": "^0.9.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-jss": "^10.1.1",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "3.4.1",
+    "react-select": "^3.1.0",
+    "react-timeseries-charts": "^0.16.1",
+    "save-svg-as-png": "^1.4.17"
+  },
+  "scripts": {
+    "start:prod": "env-cmd -f .env.production react-scripts start",
+    "start:stage": "env-cmd -f .env.staging react-scripts start",
+    "build:prod": "env-cmd -f .env.production react-scripts build",
+    "build:staging": "env-cmd -f .env.staging react-scripts build",
+    "deploy": "aws s3 sync build/ s3://cv19.report --profile covid",
+    "stage": "aws s3 sync build/ s3://stage.cv19.report --profile covid",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

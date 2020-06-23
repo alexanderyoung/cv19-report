@@ -1,0 +1,6 @@
+# launch m5.large
+scp covid.py ubuntu@ec2-54-198-238-149.compute-1.amazonaws.com:
+sudo apt update
+sudo apt install python3-pip
+pip3 install --user boto3 fbprophet requests pandas
+

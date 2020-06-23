@@ -1,0 +1,102 @@
+import React from 'react';
+import logo from './logo.svg';
+import './App.css';
+
+import { TimeSeries } from "pondjs";
+
+import {
+	Charts,
+	ChartContainer,
+	ChartRow,
+	YAxis,
+	LineChart,
+	BandChart,
+	Resizable,
+	styler
+} from "react-timeseries-charts";
+
+import data from "./data.json"
+import trend_docs from "./trend_docs.md"
+import trend_thumbnail from "./trend_thumbnail.png"
+
+const series = new TimeSeries({
+    name: "series",
+    columns: ["index", "t", "median"],
+    points: data.map(({ date, pct05, pct25, pct50, pct75, pct95 }) => [
+        date,
+        [pct05 / 1000, pct25 / 1000, pct75 / 1000, pct95 / 1000],
+        pct50 / 1000
+    ])
+});
+
+class trend extends React.Component {
+    render() {
+        const style = styler([
+            { key: "t", color: "steelblue", width: 1, opacity: 1 },
+            { key: "median", color: "#333", width: 1 }
+        ]);
+
+        return (
+            <div>
+                <div className="row">
+                    <div className="col-md-12">
+                        <b>BarChart</b>
+                    </div>
+                </div>
+                <hr />
+                <div className="row">
+                    <div className="col-md-12">
+                        <Resizable>
+                            <ChartContainer timeRange={series.range()}>
+                                <ChartRow height="500">
+                                    <YAxis
+                                        id="t-axis"
+                                        label="time (s)"
+                                        min={0}
+                                        max={18}
+                                        format="d"
+                                        width="70"
+                                        type="linear"
+                                    />
+                                    <Charts>
+                                        <BandChart
+                                            axis="t-axis"
+                                            style={style}
+                                            spacing={1}
+                                            column="t"
+                                            interpolation="curveBasis"
+                                            series={series}
+                                        />
+                                        <LineChart
+                                            axis="t-axis"
+                                            style={style}
+                                            spacing={1}
+                                            columns={["median"]}
+                                            interpolation="curveBasis"
+                                            series={series}
+                                        />
+                                    </Charts>
+                                </ChartRow>
+                            </ChartContainer>
+                        </Resizable>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+class App extends React.Component {
+  state = {};
+
+  render() {
+    return (
+      <div className="p-3 m-4 border border-muted">
+        <trend />
+      </div>
+    );
+  }
+}
+
+
+export default App;
