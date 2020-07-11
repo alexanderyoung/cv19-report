@@ -24,13 +24,22 @@ const apiUrl = process.env.REACT_APP_API_URL
 
 
 function getLast(res) {
-	let latestValue;
+	let lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease;
 	for (var value of res) {
 		if (value.deathIncrease) {
-			latestValue = value.deathIncrease;
+			lastDeath = value.deathIncrease;
+		}
+		if (value.inIcuCurrently) {
+			lastICU = value.inIcuCurrently;
+		}
+		if (value.hospitalizedCurrently) {
+			lastHospitalizedCurrently = value.hospitalizedCurrently;
+		}
+		if (value.positiveIncrease) {
+			lastPositiveIncrease= value.positiveIncrease;
 		}
 	}
-	return latestValue
+	return [lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease]
 }
 
 function setQueryParams(value) {
@@ -107,9 +116,14 @@ class SimpleChart extends React.Component {
 		    .then(res => res.json())
 				.then(
 					(result) => {
+						let lastRes;
+						lastRes = getLast(result)
 						this.setState({
 							data: result,
-							actualDeathIncreaseLatest: getLast(result)
+							actualDeathIncreaseLatest: lastRes[0],
+							inIcuCurrentlyLatest: lastRes[1],
+							hospitalizedCurrentlyLatest: lastRes[2],
+							positiveIncreaseLatest: lastRes[3],
 						});
 					},
 					(error) => {
