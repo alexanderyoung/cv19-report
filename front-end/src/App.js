@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import _ from "underscore";
 import { render } from "react-dom";
 import { TimeSeries } from "pondjs";
@@ -50,208 +50,199 @@ function setQueryParams(value) {
 	}
 }
 
-class CrossHairs extends React.Component {
-    render() {
-        const { x, y } = this.props;
-        const style = { pointerEvents: "none", stroke: "#ccc" };
-        if (!_.isNull(x) && !_.isNull(y)) {
-            return (
-                <g>
-                    <line style={style} x1={0} y1={y} x2={this.props.width} y2={y} />
-                    <line style={style} x1={x} y1={0} x2={x} y2={this.props.height} />
-                </g>
-            );
-        } else {
-            return <g />;
-        }
-    }
+function CrossHairs(props) {
+			const { x, y } = props;
+			const style = { pointerEvents: "none", stroke: "#ccc" };
+			if (!_.isNull(x) && !_.isNull(y)) {
+					return (
+							<g>
+									<line style={style} x1={0} y1={y} x2={props.width} y2={y} />
+									<line style={style} x1={x} y1={0} x2={x} y2={props.height} />
+							</g>
+					);
+			} else {
+					return <g />;
+			}
 }
 
+function SimpleChart(props) {
 
-class SimpleChart extends React.Component {
-	constructor(props) {
-		super(props);
-		let params = (new URL(document.location)).searchParams;
-		let state_value = params.get("state");
-		if (!state_value) {
-			state_value = "US"
-		}
-		this.state = {
-			highlight: null,
-			selection: null,
-			stateCode: state_value,
-			tracker: null,
-			timerange: null,
-      x: null,
-      y: null,
-			data: [],
-			states: [],
-			isLoaded: false,
-	  };
+	let params = (new URL(document.location)).searchParams;
+	let stateValue = params.get("state");
+	if (!stateValue) {
+		stateValue = "US"
 	}
+	const [highlight, setHightlight] = useState(null);
+	const [selection, setSelection] = useState(null);
+	const [stateCode, setStateCode] = useState(stateValue);
+	const [stateName, setStateName] = useState(null);
+	const [tracker, setTracker] = useState(null);
+	const [timerange, setTimerange] = useState(null);
+	const [x, setX] = useState(null);
+	const [y, setY] = useState(null);
+	const [data, setData] = useState([]);
+	const [states, setStates] = useState([]);
+	const [isLoaded, setIsLoaded] = useState(false);
+	const	[actualDeathIncreaseLatest, setActualDeathIncreaseLatest] = useState(null);
+	const [inIcuCurrentlyLatest, setInIcuCurrentlyLatest] = useState(null); 
+	const	[hospitalizedCurrentlyLatest, setHospitalizedCurrentlyLatest] = useState(null);
+	const [positiveIncreaseLatest, setPositiveIncreaseLatest] = useState(null);
+	const [error, setError] = useState();
 
-	handleTrackerChanged = tracker => {
-        if (!tracker) {
-            this.setState({ tracker, x: null, y: null });
-        } else {
-            this.setState({ tracker });
-        }
+	const handleTrackerChanged = tracker => {
+			if (!tracker) {
+				setTracker(tracker);
+				setX(null);
+				setY(null);
+			} else {
+				setTracker(tracker);
+			}
 	};
 
-	handleTimeRangeChange = timerange => {
-			this.setState({ timerange });
+	const handleTimeRangeChange = timerange => {
+		setTimerange(timerange);
 	};
 
-	handleMouseMove = (x, y) => {
-			this.setState({ x, y });
+	const handleMouseMove = (x, y) => {
+		setX(x);
+		setY(y);
 	};
 	
-	handleSchemeChange = async ({ value }) => {
-		  let selectedState = this.state.states.find(state => state.value === value);
-			this.setState({
-				stateCode: value,
-				stateName: selectedState.label,
-			});
-		  await fetch(`${apiUrl}${value.toLowerCase()}.json`)
-		    .then(res => res.json())
-				.then(
-					(result) => {
-						let lastRes;
-						lastRes = getLast(result)
-						this.setState({
-							data: result,
-							actualDeathIncreaseLatest: lastRes[0],
-							inIcuCurrentlyLatest: lastRes[1],
-							hospitalizedCurrentlyLatest: lastRes[2],
-							positiveIncreaseLatest: lastRes[3],
-						});
-					},
-					(error) => {
-						this.setState({
-							error
-						});
-					}
-				)
-		    .then(
-					setQueryParams(value)
-				)
+	const handleSchemeChange = async ({ value }) => {
+		let selectedState = states.find(state => state.value === value);
+		setStateCode(value);
+		if (selectedState) {
+			setStateName(selectedState.label);
+		}
+		
+		await fetch(`${apiUrl}${value.toLowerCase()}.json`)
+			.then(res => res.json())
+			.then(
+				(result) => {
+					let lastRes;
+					lastRes = getLast(result)
+					setData(result);
+					setActualDeathIncreaseLatest(lastRes[0]);
+					setInIcuCurrentlyLatest(lastRes[1]);
+					setHospitalizedCurrentlyLatest(lastRes[2]);
+					setPositiveIncreaseLatest(lastRes[3]);
+				},
+				(error) => {
+					setError(error);
+				}
+			)
+			.then(
+				setQueryParams(value)
+			)
 	};
 
-	fetchData = async () => {
+	const fetchData = async () => {
 		await fetch(`${apiUrl}states.json`)
 		    .then(res => res.json())
 				.then(
 					(result) => {
-						this.setState({
-							states: result
-						});
+						setStates(result);
 					},
 					(error) => {
-						this.setState({
-							error
-						});
+						setError(error);
 					}
 				)
-		await this.handleSchemeChange({value: this.state.stateCode})
-		this.setState({ isLoaded: true})
+		await handleSchemeChange({value: stateCode})
+		setIsLoaded(true);
 	}
 
 
-	componentDidMount() {
-		this.fetchData();
-	};
+	useEffect(() => {
+		fetchData();
+	}, []);
 
-	
-
-	render() {
-
-		  let series = new TimeSeries({
-				name: "series",
-				columns: [
-					"index", 
-					"death", "model_death", "model_death_error",
-					"deathIncrease", "model_deathIncrease", "model_deathIncrease_error",
-					"inIcuCurrently", "model_inIcuCurrently", "model_inIcuCurrently_error",
-					"hospitalizedCurrently", "model_hospitalizedCurrently", "hospitalizedCurrently_error",
-					"positiveIncrease", "model_positiveIncrease", "model_positiveIncrease_error",
-				],
-				points: this.state.data.map(({ 
+		let series = new TimeSeries({
+			name: "series",
+			columns: [
+				"index", 
+				"death", "model_death", "model_death_error",
+				"deathIncrease", "model_deathIncrease", "model_deathIncrease_error",
+				"inIcuCurrently", "model_inIcuCurrently", "model_inIcuCurrently_error",
+				"hospitalizedCurrently", "model_hospitalizedCurrently", "hospitalizedCurrently_error",
+				"positiveIncrease", "model_positiveIncrease", "model_positiveIncrease_error",
+			],
+			points: data.map(({ 
+				date,
+				death, model_death, model_death_pct05, model_death_pct95, 
+				deathIncrease, model_deathIncrease, model_deathIncrease_pct05, model_deathIncrease_pct95,
+				inIcuCurrently, model_inIcuCurrently, model_inIcuCurrently_pct05, model_inIcuCurrently_pct95, 
+				hospitalizedCurrently, model_hospitalizedCurrently, model_hospitalizedCurrently_pct05, model_hospitalizedCurrently_pct95, 
+				positiveIncrease, model_positiveIncrease, model_positiveIncrease_pct05, model_positiveIncrease_pct95, 
+			}) => [
 					date,
-					death, model_death, model_death_pct05, model_death_pct95, 
-					deathIncrease, model_deathIncrease, model_deathIncrease_pct05, model_deathIncrease_pct95,
-					inIcuCurrently, model_inIcuCurrently, model_inIcuCurrently_pct05, model_inIcuCurrently_pct95, 
-					hospitalizedCurrently, model_hospitalizedCurrently, model_hospitalizedCurrently_pct05, model_hospitalizedCurrently_pct95, 
-					positiveIncrease, model_positiveIncrease, model_positiveIncrease_pct05, model_positiveIncrease_pct95, 
-				}) => [
-						date,
-						death,
-						model_death,
-						[model_death_pct05, null, null, model_death_pct95],
-						deathIncrease,
-						model_deathIncrease,
-						[model_deathIncrease_pct05, null, null, model_deathIncrease_pct95],
-						inIcuCurrently,
-						model_inIcuCurrently,
-						[model_inIcuCurrently_pct05, null, null, model_inIcuCurrently_pct95],
-						hospitalizedCurrently,
-						model_hospitalizedCurrently,
-						[model_hospitalizedCurrently_pct05, null, null, model_hospitalizedCurrently_pct95],
-						positiveIncrease,
-						model_positiveIncrease,
-						[model_positiveIncrease_pct05, null, null, model_positiveIncrease_pct95],
-					])
-			});
+					death,
+					model_death,
+					[model_death_pct05, null, null, model_death_pct95],
+					deathIncrease,
+					model_deathIncrease,
+					[model_deathIncrease_pct05, null, null, model_deathIncrease_pct95],
+					inIcuCurrently,
+					model_inIcuCurrently,
+					[model_inIcuCurrently_pct05, null, null, model_inIcuCurrently_pct95],
+					hospitalizedCurrently,
+					model_hospitalizedCurrently,
+					[model_hospitalizedCurrently_pct05, null, null, model_hospitalizedCurrently_pct95],
+					positiveIncrease,
+					model_positiveIncrease,
+					[model_positiveIncrease_pct05, null, null, model_positiveIncrease_pct95],
+				])
+		});
+	
+		if (timerange === null){
+			setTimerange(series.range());
+		}
 
-		  if (this.state.timerange === null){
-        this.setState({ timerange:  series.range()});
-			}
-
-		  const f = format(",");
-		
-		  let dailyDeathValue, totalDeathValue, modelDeathDailyValue, modelDeathValue;
-		  let inIcuCurrentlyValue, modelinIcuCurrentlyValue;
-		  let hospitalizedCurrentlyValue, modelhospitalizedCurrentlyValue;
-		  let positiveIncreaseValue, modelpositiveIncreaseValue;
-			if (this.state.tracker) {
-				const seriesIndex = series.bisect(this.state.tracker);
-				const seriesTrackerEvent = series.at(seriesIndex);
-				if (seriesTrackerEvent.get("death")) {
-					totalDeathValue = `${f(seriesTrackerEvent.get("death"))}`;
-				};
-		    if (seriesTrackerEvent.get("model_death")) {
-					modelDeathValue = `${f(parseInt(seriesTrackerEvent.get("model_death"), 10))}`;
-				};
-		    if (seriesTrackerEvent.get("deathIncrease")) {
-					dailyDeathValue = `${f(seriesTrackerEvent.get("deathIncrease"))}`;
-				};
-		    if (seriesTrackerEvent.get("model_deathIncrease")) {
-					modelDeathDailyValue = `${f(parseInt(seriesTrackerEvent.get("model_deathIncrease"), 10))}`;
-				};
-				if (seriesTrackerEvent.get("inIcuCurrently")) {
-					inIcuCurrentlyValue = `${f(seriesTrackerEvent.get("inIcuCurrently"))}`;
-				};
-		    if (seriesTrackerEvent.get("model_inIcuCurrently")) {
-					modelinIcuCurrentlyValue = `${f(parseInt(seriesTrackerEvent.get("model_inIcuCurrently"), 10))}`;
-				};
-				if (seriesTrackerEvent.get("hospitalizedCurrently")) {
-					hospitalizedCurrentlyValue = `${f(seriesTrackerEvent.get("hospitalizedCurrently"))}`;
-				};
-		    if (seriesTrackerEvent.get("model_hospitalizedCurrently")) {
-					modelhospitalizedCurrentlyValue = `${f(parseInt(seriesTrackerEvent.get("model_hospitalizedCurrently"), 10))}`;
-				};
-				if (seriesTrackerEvent.get("positiveIncrease")) {
-					positiveIncreaseValue = `${f(seriesTrackerEvent.get("positiveIncrease"))}`;
-				};
-		    if (seriesTrackerEvent.get("model_positiveIncrease")) {
-					modelpositiveIncreaseValue = `${f(parseInt(seriesTrackerEvent.get("model_positiveIncrease"), 10))}`;
-				};
-			} else {
-				  dailyDeathValue = `${f(this.state.actualDeathIncreaseLatest)}`;
-					totalDeathValue = `${f(series.max("death"))}`;
-				  inIcuCurrentlyValue = `${f(this.state.inIcuCurrentlyLatest)}`;
-				  hospitalizedCurrentlyValue = `${f(this.state.hospitalizedCurrentlyLatest)}`;
-				  positiveIncreaseValue = `${f(this.state.positiveIncreaseLatest)}`;
-			}
+		const f = format(",");
+	
+		let dailyDeathValue, totalDeathValue, modelDeathDailyValue, modelDeathValue;
+		let inIcuCurrentlyValue, modelinIcuCurrentlyValue;
+		let hospitalizedCurrentlyValue, modelhospitalizedCurrentlyValue;
+		let positiveIncreaseValue, modelpositiveIncreaseValue;
+		if (tracker) {
+			const seriesIndex = series.bisect(tracker);
+			const seriesTrackerEvent = series.at(seriesIndex);
+			if (seriesTrackerEvent.get("death")) {
+				totalDeathValue = `${f(seriesTrackerEvent.get("death"))}`;
+			};
+			if (seriesTrackerEvent.get("model_death")) {
+				modelDeathValue = `${f(parseInt(seriesTrackerEvent.get("model_death"), 10))}`;
+			};
+			if (seriesTrackerEvent.get("deathIncrease")) {
+				dailyDeathValue = `${f(seriesTrackerEvent.get("deathIncrease"))}`;
+			};
+			if (seriesTrackerEvent.get("model_deathIncrease")) {
+				modelDeathDailyValue = `${f(parseInt(seriesTrackerEvent.get("model_deathIncrease"), 10))}`;
+			};
+			if (seriesTrackerEvent.get("inIcuCurrently")) {
+				inIcuCurrentlyValue = `${f(seriesTrackerEvent.get("inIcuCurrently"))}`;
+			};
+			if (seriesTrackerEvent.get("model_inIcuCurrently")) {
+				modelinIcuCurrentlyValue = `${f(parseInt(seriesTrackerEvent.get("model_inIcuCurrently"), 10))}`;
+			};
+			if (seriesTrackerEvent.get("hospitalizedCurrently")) {
+				hospitalizedCurrentlyValue = `${f(seriesTrackerEvent.get("hospitalizedCurrently"))}`;
+			};
+			if (seriesTrackerEvent.get("model_hospitalizedCurrently")) {
+				modelhospitalizedCurrentlyValue = `${f(parseInt(seriesTrackerEvent.get("model_hospitalizedCurrently"), 10))}`;
+			};
+			if (seriesTrackerEvent.get("positiveIncrease")) {
+				positiveIncreaseValue = `${f(seriesTrackerEvent.get("positiveIncrease"))}`;
+			};
+			if (seriesTrackerEvent.get("model_positiveIncrease")) {
+				modelpositiveIncreaseValue = `${f(parseInt(seriesTrackerEvent.get("model_positiveIncrease"), 10))}`;
+			};
+		} else {
+				dailyDeathValue = `${f(actualDeathIncreaseLatest)}`;
+				totalDeathValue = `${f(series.max("death"))}`;
+				inIcuCurrentlyValue = `${f(inIcuCurrentlyLatest)}`;
+				hospitalizedCurrentlyValue = `${f(hospitalizedCurrentlyLatest)}`;
+				positiveIncreaseValue = `${f(positiveIncreaseLatest)}`;
+		}
 
 		const style = styler([
 			{ key: "model_death_error", color: "red", width: 1, opacity: 1 },
@@ -288,175 +279,175 @@ class SimpleChart extends React.Component {
 				{key: "modelDeath", color: "red", width: 2, dashed: true},
 				{key: "modelDeathDaily", color: "blue", width: 2, dashed: true}
 		]); 
-		const { error, isLoaded, states } = this.state;
-		if (error) {
-			return <div>Error: {error.message}</div>;
-		} else if (!isLoaded) {
-			return <div>Loading...</div>;
-		} else {
-					return (
-							<div>
-									<div className="row">
-											<div className="col-md-12 text-left">
-													<strong className="text-center">COVID-19 model for </strong>
-											</div>
-											<div className="col-md-3">
-													<Select
-															name="form-field-name"
-															options={states}
-															clearable={false}
-															value={states.find(state => state.value === this.state.stateCode)}
-															onChange={value => this.handleSchemeChange(value)}
-													/>
-											</div>
-									</div>
-									<hr />
-									<div className="row">
-											<div className="col-md-12" id="chart">
-													<Resizable>
-															<ChartContainer 
-																	timeRange={series.range()}
-																	timeAxisStyle={{
-																			ticks: {
-																					stroke: "#AAA",
-																					opacity: 0.25,
-																					"stroke-dasharray": "1,1"
-																			},
-																			values: {
-																					fill: "#AAA",
-																					"font-size": 12
-																			}
-																	}}
-																	maxTime={series.range().end()}
-																	minTime={series.range().begin()}
-																	timeAxisAngledLabels={true}
-																	timeAxisHeight={65}
-																	onTrackerChanged={this.handleTrackerChanged}
-																	onBackgroundClick={() => this.setState({ selection: null })}
-																	enablePanZoom={true}
-																	onTimeRangeChanged={this.handleTimeRangeChange}
-																	onMouseMove={(x, y) => this.handleMouseMove(x, y)}
-																	minDuration={1000 * 60 * 60 * 24 * 30}
-						                      title={`${this.state.stateCode} - ${series.max("death")} (${this.state.actualDeathIncreaseLatest} new)`}
-						                      titleHeight={0}
-						                      titleStyle={{ 
-																		fontWeight: 100, 
-																		fontSize: 24, 
-																		font: '"Goudy Bookletter 1911", sans-serif"',
-																		fill: "#C0C0C0" 
-																	}}
-															>
-																	<ChartRow height="400">
-																			<YAxis
-																					id="total-death-axis"
-																					label="Deaths"
-																					min={0}
-																					max={_.max([series.max("model_death"), series.max("death")])}
 
-																					format=".2s"
-																					width="30"
-																					type="linear"
-																					color="red"
-																					visible={true}
-						                              labelOffset={55}
-						                              style={leftAxis}
-																			/>
-																			<Charts>
-																					<BandChart
-																							axis="daily-death-axis"
-																							style={style}
-																							spacing={1}
-																							column="model_deathIncrease_error"
-																							interpolation="curveBasis"
-																							series={series}
-																					/>
-																					<LineChart
-																							axis="daily-death-axis"
-																							style={style}
-																							spacing={1}
-																							columns={[
-																								"deathIncrease", 
-																								"model_deathIncrease"]}
-																							interpolation="curveBasis"
-																							series={series}
-																							highlight={this.state.highlight}
-																							onHighlightChange={highlight =>
-																									this.setState({ highlight })
-																							}
-																							selection={this.state.selection}
-																							onSelectionChange={selection =>
-																									this.setState({ selection })
-																							}
-																					/>
-																					<BandChart
-																							axis="total-death-axis"
-																							style={style}
-																							spacing={1}
-																							column="model_death_error"
-																							interpolation="curveBasis"
-																							series={series}
-																					/>
-																					<LineChart
-																							axis="total-death-axis"
-																							style={style}
-																							spacing={1}
-																							columns={[
-																								"death", "model_death"]}
-																							interpolation="curveBasis"
-																							series={series}
-																							highlight={this.state.highlight}
-																							onHighlightChange={highlight =>
-																									this.setState({ highlight })
-																							}
-																							selection={this.state.selection}
-																							onSelectionChange={selection =>
-																									this.setState({ selection })
-																							}
-																					/>
-																					<CrossHairs x={this.state.x} y={this.state.y} />
-																			</Charts>
-																			<YAxis
-																					id="daily-death-axis"
-																					label="Death Increase"
-																					min={0}
-																					max={_.max([series.max("model_deathIncrease"), series.max("deathIncrease")])}
-																					format=".2s"
-																					width="30"
-																					type="linear"
-																					align="right"
-																					visible={true}
-						                              labelOffset={-57}
-						                              style={rightAxis}
-																			/>
-																	</ChartRow>
-															</ChartContainer>
-													</Resizable>
+	if (error) {
+		return <div>Error: {error.message}</div>;
+	} else if (!isLoaded) {
+		return <div>Loading...</div>;
+	} else {
+				return (
+						<div>
+								<div className="row">
+										<div className="col-md-12 text-left">
+												<strong className="text-center">COVID-19 model for </strong>
+										</div>
+										<div className="col-md-3">
+												<Select
+														name="form-field-name"
+														options={states}
+														clearable={false}
+														value={states.find(state => state.value === stateCode)}
+														onChange={value => handleSchemeChange(value)}
+												/>
+										</div>
+								</div>
+								<hr />
+								<div className="row">
+										<div className="col-md-12" id="chart">
+												<Resizable>
+														<ChartContainer 
+																timeRange={series.range()}
+																timeAxisStyle={{
+																		ticks: {
+																				stroke: "#AAA",
+																				opacity: 0.25,
+																				"stroke-dasharray": "1,1"
+																		},
+																		values: {
+																				fill: "#AAA",
+																				"font-size": 12
+																		}
+																}}
+																maxTime={series.range().end()}
+																minTime={series.range().begin()}
+																timeAxisAngledLabels={true}
+																timeAxisHeight={65}
+																onTrackerChanged={handleTrackerChanged}
+																onBackgroundClick={() => setSelection(null)}
+																enablePanZoom={true}
+																onTimeRangeChanged={handleTimeRangeChange}
+																onMouseMove={(x, y) => handleMouseMove(x, y)}
+																minDuration={1000 * 60 * 60 * 24 * 30}
+																title={`${stateCode} - ${series.max("death")} (${actualDeathIncreaseLatest} new)`}
+																titleHeight={0}
+																titleStyle={{ 
+																	fontWeight: 100, 
+																	fontSize: 24, 
+																	font: '"Goudy Bookletter 1911", sans-serif"',
+																	fill: "#C0C0C0" 
+																}}
+														>
+																<ChartRow height="400">
+																		<YAxis
+																				id="total-death-axis"
+																				label="Deaths"
+																				min={0}
+																				max={_.max([series.max("model_death"), series.max("death")])}
+
+																				format=".2s"
+																				width="30"
+																				type="linear"
+																				color="red"
+																				visible={true}
+																				labelOffset={55}
+																				style={leftAxis}
+																		/>
+																		<Charts>
+																				<BandChart
+																						axis="daily-death-axis"
+																						style={style}
+																						spacing={1}
+																						column="model_deathIncrease_error"
+																						interpolation="curveBasis"
+																						series={series}
+																				/>
+																				<LineChart
+																						axis="daily-death-axis"
+																						style={style}
+																						spacing={1}
+																						columns={[
+																							"deathIncrease", 
+																							"model_deathIncrease"]}
+																						interpolation="curveBasis"
+																						series={series}
+																						highlight={highlight}
+																						onHighlightChange={highlight =>
+																							setHightlight({highlight})
+																						}
+																						selection={selection}
+																						onSelectionChange={selection =>
+																							setSelection({selection})
+																						}
+																				/>
+																				<BandChart
+																						axis="total-death-axis"
+																						style={style}
+																						spacing={1}
+																						column="model_death_error"
+																						interpolation="curveBasis"
+																						series={series}
+																				/>
+																				<LineChart
+																						axis="total-death-axis"
+																						style={style}
+																						spacing={1}
+																						columns={[
+																							"death", "model_death"]}
+																						interpolation="curveBasis"
+																						series={series}
+																						highlight={highlight}
+																						onHighlightChange={highlight =>
+																							setHightlight({highlight})
+																						}
+																						selection={selection}
+																						onSelectionChange={selection =>
+																							setSelection({selection})
+																						}
+																				/>
+																				<CrossHairs x={x} y={y} />
+																		</Charts>
+																		<YAxis
+																				id="daily-death-axis"
+																				label="Death Increase"
+																				min={0}
+																				max={_.max([series.max("model_deathIncrease"), series.max("deathIncrease")])}
+																				format=".2s"
+																				width="30"
+																				type="linear"
+																				align="right"
+																				visible={true}
+																				labelOffset={-57}
+																				style={rightAxis}
+																		/>
+																</ChartRow>
+														</ChartContainer>
+												</Resizable>
+										</div>
+										<div className="row">
+											<div className="col-md-9">
+													<Legend
+																	type="line"
+																	align="right"
+																	style={legendStyle}
+																	highlight={highlight}
+																	onHighlightChange={highlight => setHightlight({highlight})}
+																	selection={selection}
+																	onSelectionChange={selection => setSelection({selection})}
+																	categories={[
+																			{ key: "actualDeath", label: "Total Deaths", value: totalDeathValue},
+																			{ key: "dailyDeath", label: "Daily Deaths", value: dailyDeathValue},
+																			{ key: "modelDeath", label: "Projected Total Deaths", value: modelDeathValue},
+																			{ key: "modelDeathDaily", label: "Projected Daily Deaths", value: modelDeathDailyValue}
+																	]}
+															/>
 											</div>
-											<div className="row">
-												<div className="col-md-9">
-														<Legend
-																		type="line"
-																		align="right"
-																		style={legendStyle}
-																		highlight={this.state.highlight}
-																		onHighlightChange={highlight => this.setState({highlight})}
-																		selection={this.state.selection}
-																		onSelectionChange={selection => this.setState({selection})}
-																		categories={[
-																				{ key: "actualDeath", label: "Total Deaths", value: totalDeathValue},
-																				{ key: "dailyDeath", label: "Daily Deaths", value: dailyDeathValue},
-																				{ key: "modelDeath", label: "Projected Total Deaths", value: modelDeathValue},
-																				{ key: "modelDeathDaily", label: "Projected Daily Deaths", value: modelDeathDailyValue}
-																		]}
-																/>
-												</div>
-										 </div>
-									</div>
-							</div>
-					);
-				}
-    }
+									 </div>
+								</div>
+						</div>
+				);
+			}
 }
+
 
 function Header (){
 	const classes = useStyles();

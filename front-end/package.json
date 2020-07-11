@@ -22,7 +22,7 @@
     "start:prod": "env-cmd -f .env.production react-scripts start",
     "start:stage": "env-cmd -f .env.staging react-scripts start",
     "build:prod": "env-cmd -f .env.production react-scripts build",
-    "build:staging": "env-cmd -f .env.staging react-scripts build",
+    "build:stage": "env-cmd -f .env.staging react-scripts build",
     "deploy": "aws s3 sync build/ s3://cv19.report --profile covid",
     "stage": "aws s3 sync build/ s3://stage.cv19.report --profile covid",
     "test": "react-scripts test",
