@@ -143,7 +143,7 @@ def get_data(state='all', date='daily'):
 
 
 def train(model_name, df, state_name, states, periods=30, frequency='D',
-          history=False, plot=False):
+          history=True, plot=False):
     model = Prophet(weekly_seasonality=True, interval_width=0.95,
                     changepoint_prior_scale=.1)
     train_df = df.rename(columns={model_name:'y'})
@@ -234,7 +234,17 @@ def full_update(ignore_history=False, plot=False, export=True, export_type='s3',
                 train(model_name=model_name, df=df, state_name=state.name, 
                       states=states, plot=True)
 
-    combined = prepare_combined(states=states, metrics=metrics, plot=plot)
+    # There is too much delta between different hospitalization reporting to
+    # generate meaningful trends ATM...
+    us_metrics = []
+    for metric in metrics:
+        if metric.startswith('model_hospitalizedCurrently'):
+            pass
+        elif metric.startswith('model_inIcuCurrently'):
+            pass
+        else:
+            us_metrics.append(metric)
+    combined = prepare_combined(states=states, metrics=us_metrics, plot=plot)
 
     if export:
         export_data(states=states, metrics=metrics, combined=combined,
