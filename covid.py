@@ -84,7 +84,12 @@ class Day:
                  deathIncrease=None, hospitalizedIncrease=None, 
                  negativeIncrease=None, positiveIncrease=None, 
                  totalTestResultsIncrease=None, 
-                 model_hospitalizedCurrently=None, model_inIcuCurrently=None,
+                 model_hospitalizedCurrently=None,
+                 model_hospitalizedCurrently_pct05=None,
+                 model_hospitalizedCurrently_pct95=None,
+                 model_inIcuCurrently=None,
+                 model_inIcuCurrently_pct05=None,
+                 model_inIcuCurrently_pct95=None,
                  model_death=None, model_death_pct05=None, 
                  model_death_pct95=None, model_deathIncrease=None, 
                  model_deathIncrease_pct05=None, model_deathIncrease_pct95=None):
@@ -114,7 +119,11 @@ class Day:
         self.positiveIncrease = positiveIncrease
         self.totalTestResultsIncrease = totalTestResultsIncrease
         self.model_hospitalizedCurrently=model_hospitalizedCurrently
+        self.model_hospitalizedCurrently_pct05=model_hospitalizedCurrently_pct05
+        self.model_hospitalizedCurrently_pct95=model_hospitalizedCurrently_pct95
         self.model_inIcuCurrently=model_inIcuCurrently
+        self.model_inIcuCurrently_pct05=model_inIcuCurrently_pct05
+        self.model_inIcuCurrently_pct95=model_inIcuCurrently_pct95
         self.model_death=model_death
         self.model_death_pct05=model_death_pct05
         self.model_death_pct95=model_death_pct95
@@ -134,7 +143,7 @@ def get_data(state='all', date='daily'):
 
 
 def train(model_name, df, state_name, states, periods=30, frequency='D',
-          history=True, plot=False):
+          history=False, plot=False):
     model = Prophet(weekly_seasonality=True, interval_width=0.95,
                     changepoint_prior_scale=.1)
     train_df = df.rename(columns={model_name:'y'})
@@ -162,13 +171,25 @@ def train(model_name, df, state_name, states, periods=30, frequency='D',
                     date=record_date, state=state_name)
         setattr(states[state_name].days[record_date], 
                 'model_{}'.format(model_name),
-                record['yhat'])
+                record.get('yhat'))
         setattr(states[state_name].days[record_date], 
                 'model_{}_pct05'.format(model_name),
-                record['yhat_lower'])
+                record.get('yhat_lower'))
         setattr(states[state_name].days[record_date], 
                 'model_{}_pct95'.format(model_name),
-                record['yhat_upper'])
+                record.get('yhat_upper'))
+    for day in states[state_name].days.keys():
+        if not hasattr(states[state_name].days[day],
+                       'model_{}'.format(model_name)):
+            setattr(states[state_name].days[day],
+                    'model_{}'.format(model_name),
+                    None)
+            setattr(states[state_name].days[day],
+                    'model_{}_pct05'.format(model_name),
+                    None)
+            setattr(states[state_name].days[day],
+                    'model_{}_pct95'.format(model_name),
+                    None)
 
 
 def full_update(ignore_history=False, plot=False, export=True, export_type='s3',
@@ -256,8 +277,7 @@ def export_data(states, metrics, combined=None, export_type='s3',
             record = {'date': day['date'].strftime('%Y-%m-%d')}
             for metric_name in metrics:
                 metric = day.get(metric_name)
-                if metric:
-                    record[metric_name] = metric
+                record[metric_name] = metric
             export.append(record)
             export.sort(key=lambda d: d['date'])
         export_func(filename='us.json', json_data=export, s3_bucket=s3_bucket)
@@ -279,7 +299,7 @@ def prepare_combined(states, metrics, plot=False):
             (datetime.datetime.today() + 
              datetime.timedelta(days=30)).strftime('%Y%m%d'))
     for date in dates:
-        if date <= future_limit:
+        if date > 20200225 and date <= future_limit:
             day = {
                 'date': pd.to_datetime(date, format='%Y%m%d')
                 }
@@ -293,6 +313,8 @@ def prepare_combined(states, metrics, plot=False):
                      getattr(state.days[date], model) is not None])
                 if total:
                     day[model] = total
+                else:
+                    day[model] = None
 
             combined.append(day)
     df = pd.DataFrame(combined)

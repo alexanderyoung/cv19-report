@@ -39,7 +39,7 @@ function getLast(res) {
 			lastPositiveIncrease= value.positiveIncrease;
 		}
 	}
-	return [lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease]
+	return [lastDeath || 0, lastICU || 0, lastHospitalizedCurrently || 0, lastPositiveIncrease || 0]
 }
 
 function setQueryParams(value) {
@@ -194,7 +194,7 @@ function SimpleChart(props) {
 						<hr />
 				<DualChart
 					series={series}
-					title={`${stateCode} - ${series.max("death")} (${actualDeathIncreaseLatest} new)`}
+					title={`${stateCode} - ${f(series.max("death"))} (${f(actualDeathIncreaseLatest)} 24 hrs)`}
 					leftLabel="Deaths"
 					leftData="death"
 					leftModel="model_death"
@@ -208,8 +208,8 @@ function SimpleChart(props) {
 					/>
 				<DualChart
 					series={series}
-					title={`${stateCode} - ${positiveIncreaseLatest} New Cases`}
-					leftLabel="New Cases"
+					title={`${stateCode} - ${f(positiveIncreaseLatest)} New Pos. Tests`}
+					leftLabel="New cases last 24 hrs"
 					leftData="positiveIncrease"
 					leftModel="model_positiveIncrease"
 					leftError="model_positiveIncrease_error"
@@ -221,7 +221,7 @@ function SimpleChart(props) {
 				/>
 				<DualChart
 					series={series}
-					title={`${stateCode} - ${hospitalizedCurrentlyLatest} (${inIcuCurrentlyLatest} ICU)`}
+					title={`${stateCode} - ${f(hospitalizedCurrentlyLatest)} Hosp., ${f(inIcuCurrentlyLatest)} ICU`}
 					leftLabel="Hospitalized"
 					leftData="hospitalizedCurrently"
 					leftModel="model_hospitalizedCurrently"
@@ -305,12 +305,9 @@ function DualChart(props){
 			rightModelValue = `${f(parseInt(seriesTrackerEvent.get(rightModel), 10))}`;
 		};
 	} else {
-		if (!isNaN(rightDataValueDefault)) {
-			rightDataValue = rightDataValueDefault;
-		};
-		if (!isNaN(leftDataValueDefault)) {
-			leftDataValue = leftDataValueDefault;
-		};
+
+		rightDataValue = rightDataValueDefault;
+		leftDataValue = leftDataValueDefault;
 	}
 
 	const style = styler([
