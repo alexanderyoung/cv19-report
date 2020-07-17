@@ -17,3 +17,8 @@ div.col-sm {
   min-height: 67px;
   overflow: hidden;
 }
+
+div.float-right {
+  float: right;
+  margin-right: 10px;
+}

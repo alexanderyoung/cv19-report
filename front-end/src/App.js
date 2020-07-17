@@ -22,6 +22,7 @@ import SimpleModal from "./SimpleModal/SimpleModal";
 const saveSvgAsPng = require('save-svg-as-png')
 const apiUrl = process.env.REACT_APP_API_URL
 
+const f = format(",");
 
 function getLast(res) {
 	let lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease;
@@ -39,7 +40,7 @@ function getLast(res) {
 			lastPositiveIncrease= value.positiveIncrease;
 		}
 	}
-	return [lastDeath || 0, lastICU || 0, lastHospitalizedCurrently || 0, lastPositiveIncrease || 0]
+	return [lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease]
 }
 
 function setQueryParams(value) {
@@ -131,8 +132,6 @@ function SimpleChart(props) {
 		fetchData();
 	}, []);
 
-	const f = format(",");
-
 	let series = new TimeSeries({
 		name: "series",
 		columns: [
@@ -170,6 +169,12 @@ function SimpleChart(props) {
 			])
 	});
 
+	const hospitalizedCurrentlyLatestFormatted = isNaN(hospitalizedCurrentlyLatest) ? 'N/A': f(hospitalizedCurrentlyLatest);
+	const inIcuCurrentlyLatestFormatted = isNaN(inIcuCurrentlyLatest) ? 'N/A': f(hospitalizedCurrentlyLatest);
+	const actualDeathIncreaseLatestFormatted = isNaN(actualDeathIncreaseLatest) ? 'N/A': f(actualDeathIncreaseLatest);
+	const positiveIncreaseLatestFormatted = isNaN(positiveIncreaseLatest) ? 'N/A': f(positiveIncreaseLatest);
+
+
 	if (error) {
 		return <div>Error: {error.message}</div>;
 	} else if (!isLoaded) {
@@ -194,7 +199,7 @@ function SimpleChart(props) {
 						<hr />
 				<DualChart
 					series={series}
-					title={`${stateCode} - ${f(series.max("death"))} (${f(actualDeathIncreaseLatest)} 24 hrs)`}
+					title={`${stateCode} - ${f(series.max("death"))} (${actualDeathIncreaseLatestFormatted} last 24 hrs)`}
 					leftLabel="Deaths"
 					leftData="death"
 					leftModel="model_death"
@@ -204,34 +209,34 @@ function SimpleChart(props) {
 					rightData="deathIncrease"
 					rightModel="model_deathIncrease"
 					rightError="model_deathIncrease_error"
-					rightDataValueDefault={`${f(actualDeathIncreaseLatest)}`}
+					rightDataValueDefault={`${actualDeathIncreaseLatestFormatted}`}
 					/>
 				<DualChart
 					series={series}
-					title={`${stateCode} - ${f(positiveIncreaseLatest)} New Pos. Tests`}
+					title={`${stateCode} - ${positiveIncreaseLatestFormatted} New Pos. Tests`}
 					leftLabel="New cases last 24 hrs"
 					leftData="positiveIncrease"
 					leftModel="model_positiveIncrease"
 					leftError="model_positiveIncrease_error"
-					leftDataValueDefault={`${f(positiveIncreaseLatest)}`}
+					leftDataValueDefault={`${positiveIncreaseLatestFormatted}`}
 					rightLabel={null}
 					rightData="none"
 					rightError="model_deathIncrease_error"
-					rightDataValueDefault={`${f(actualDeathIncreaseLatest)}`}
+					rightDataValueDefault={`${actualDeathIncreaseLatestFormatted}`}
 				/>
 				<DualChart
 					series={series}
-					title={`${stateCode} - ${f(hospitalizedCurrentlyLatest)} Hosp., ${f(inIcuCurrentlyLatest)} ICU`}
+					title={`${stateCode} - ${hospitalizedCurrentlyLatestFormatted} Hosp., ${inIcuCurrentlyLatestFormatted} ICU`}
 					leftLabel="Hospitalized"
 					leftData="hospitalizedCurrently"
 					leftModel="model_hospitalizedCurrently"
 					leftError="model_hospitalizedCurrently_error"
-					leftDataValueDefault={`${f(hospitalizedCurrentlyLatest)}`}
+					leftDataValueDefault={`${hospitalizedCurrentlyLatestFormatted}`}
 					rightLabel="ICU"
 					rightData="inIcuCurrently"
 					rightModel="model_inIcuCurrently"
 					rightError="model_inIcuCurrently_error"
-					rightDataValueDefault={`${f(inIcuCurrentlyLatest)}`}
+					rightDataValueDefault={`${inIcuCurrentlyLatestFormatted}`}
 				/>
 			</div>
 		);
@@ -286,7 +291,6 @@ function DualChart(props){
 		setY(y);
 	};
 
-	const f = format(",");
 	
 	let rightDataValue, leftDataValue, rightModelValue, leftModelValue;
 	if (tracker) {
@@ -305,9 +309,8 @@ function DualChart(props){
 			rightModelValue = `${f(parseInt(seriesTrackerEvent.get(rightModel), 10))}`;
 		};
 	} else {
-
-		rightDataValue = rightDataValueDefault;
-		leftDataValue = leftDataValueDefault;
+		rightDataValue = rightDataValueDefault === 'NaN' ? '' : rightDataValueDefault;
+		leftDataValue = leftDataValueDefault === 'NaN' ? '' : leftDataValueDefault;
 	}
 
 	const style = styler([
@@ -355,13 +358,9 @@ function DualChart(props){
 									type="line"
 									align="right"
 									style={legendStyle}
-									highlight={highlight}
-									onHighlightChange={highlight => setHightlight({highlight})}
-									selection={selection}
-									onSelectionChange={selection => setSelection({selection})}
 									categories={[
-										{ key: "leftData", label: leftLabel, value: leftDataValue},
-										{ key: "leftModel", label: "Projected " + leftLabel, value: leftModelValue},
+										{ key: "leftData", label: leftLabel, value: leftDataValue === NaN ? '' : leftDataValue},
+										{ key: "leftModel", label: "Projected " + leftLabel, value: rightModelValue === NaN ? '' : rightModelValue},
 									]}
 								/>
 							</div>
@@ -372,13 +371,9 @@ function DualChart(props){
 									type="line"
 									align="right"
 									style={legendStyle}
-									highlight={highlight}
-									onHighlightChange={highlight => setHightlight({highlight})}
-									selection={selection}
-									onSelectionChange={selection => setSelection({selection})}
 									categories={[
-										{ key: "rightData", label: rightLabel, value: rightDataValue},
-										{ key: "rightModel", label: "Projected " + rightLabel, value: rightModelValue},
+										{ key: "rightData", label: rightLabel, value: rightDataValue === NaN ? '' : rightDataValue},
+										{ key: "rightModel", label: "Projected " + rightLabel, value: rightModelValue === NaN ? '' : rightModelValue},
 									]}
 								/>
 							</div>
@@ -404,8 +399,6 @@ function DualChart(props){
 							timeAxisAngledLabels={true}
 							timeAxisHeight={65}
 							onTrackerChanged={handleTrackerChanged}
-							onBackgroundClick={() => setSelection(null)}
-							enablePanZoom={true}
 							onTimeRangeChanged={handleTimeRangeChange}
 							onMouseMove={(x, y) => handleMouseMove(x, y)}
 							minDuration={1000 * 60 * 60 * 24 * 30}
@@ -449,14 +442,6 @@ function DualChart(props){
 									columns={[rightData, rightModel]}
 									interpolation="curveBasis"
 									series={series}
-									highlight={highlight}
-									onHighlightChange={highlight =>
-										setHightlight({highlight})
-									}
-									selection={selection}
-									onSelectionChange={selection =>
-										setSelection({selection})
-									}
 								/>
 								<BandChart
 									axis="leftAxis"
@@ -473,14 +458,6 @@ function DualChart(props){
 									columns={[leftData, leftModel]}
 									interpolation="curveBasis"
 									series={series}
-									highlight={highlight}
-									onHighlightChange={highlight =>
-										setHightlight({highlight})
-									}
-									selection={selection}
-									onSelectionChange={selection =>
-										setSelection({selection})
-									}
 								/>
 								<CrossHairs x={x} y={y} />
 							</Charts>
@@ -512,10 +489,34 @@ function Header (){
 	return (
 		<div className={classes.appWrapper}>
 			<header>
-				<h2>cv19.report</h2>
-				<p>
-					COVID-19 visualization & forecasting
-				</p>
+				<div className="col-sm">
+					<h2>cv19.report</h2>
+					<p>
+						COVID-19 visualization & forecasting
+					</p>
+				</div>
+				<div className="float-right">
+				<div className="float-right">
+					<SimpleModal buttonLabel="About">
+						<h2>COVID Data</h2>
+						<p>
+								This tool visualizes daily data from every US state (data from <a href="https://covidtracking.com/data" target="_blank">Covid Tracking Project</a> and creates a time series model forecasting the near term future for a given metric.
+						</p>
+						<p>
+								Every state model is combined into a US model.
+						</p>
+						<p>
+								Daily data is refreshed as soon as it's available, typically sometime after 4 PM EST.
+						</p>
+						<p>
+							The shaded areas represent the 5% and 95% confidence estimates from the model.  If a data point lies outside of this area it is unexpected and may represent a problem with source data or some unexpected sudden change.
+						</p>
+						<p>
+							Developed by Alex Young - <a href="https://github.com/sponsors/alexanderyoung" target="_blank">Support on GitHub</a> - <a href="https://support.cv19.report" target="_blank">Get updates</a>
+						</p>
+					</SimpleModal>
+				</div>
+				</div>
 			</header>
 		</div>
 	);
@@ -535,21 +536,7 @@ function Footer (){
 	}
 	return (
 		<div className={classes.appWrapper}>
-			<SimpleModal buttonLabel="About">
-				<h2>COVID Data</h2>
-				<p>
-						This tool visualizes daily data from every US state (data from <a href="https://covidtracking.com/data" target="_blank">Covid Tracking Project</a> and creates a time series model forecasting the near term future for a given metric.
-				</p>
-				<p>
-						Every state model is combined into a US model.
-				</p>
-				<p>
-						Daily data is refreshed as soon as it's available, typically sometime after 4 PM EST.
-				</p>
-				<p>
-					  The shaded areas represent the 5% and 95% confidence estimates from the model.  If a data point lies outside of this area it is unexpected and may represent a problem with source data or some unexpected sudden change.
-				</p>
-			</SimpleModal>
+
 		</div>
 	);
 }
