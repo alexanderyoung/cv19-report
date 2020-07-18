@@ -175,7 +175,7 @@ function SimpleChart(props) {
 	});
 
 	const hospitalizedCurrentlyLatestFormatted = isNaN(hospitalizedCurrentlyLatest) ? 'N/A': f(hospitalizedCurrentlyLatest);
-	const inIcuCurrentlyLatestFormatted = isNaN(inIcuCurrentlyLatest) ? 'N/A': f(hospitalizedCurrentlyLatest);
+	const inIcuCurrentlyLatestFormatted = isNaN(inIcuCurrentlyLatest) ? 'N/A': f(inIcuCurrentlyLatest);
 	const actualDeathIncreaseLatestFormatted = isNaN(actualDeathIncreaseLatest) ? 'N/A': f(actualDeathIncreaseLatest);
 	const positiveIncreaseLatestFormatted = isNaN(positiveIncreaseLatest) ? 'N/A': f(positiveIncreaseLatest);
 
