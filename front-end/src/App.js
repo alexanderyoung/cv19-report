@@ -47,7 +47,7 @@ function setQueryParams(value) {
 	if (value === "US") {
 		window.history.pushState(null, null, '/')
 	} else {
-		window.history.pushState(null, null, `/?state=${value}`)
+		window.history.pushState(null, null, `/${value}`)
 	}
 }
 
@@ -68,10 +68,15 @@ function CrossHairs(props) {
 
 function SimpleChart(props) {
 
-	let params = (new URL(document.location)).searchParams;
-	let stateValue = params.get("state");
+	let stateValue = window.location.pathname.split('/')[1].toUpperCase();
 	if (!stateValue) {
-		stateValue = "US"
+		// Cover old format
+		let params = (new URL(document.location)).searchParams;
+		stateValue = params.get("state");
+		console.log(stateValue);
+		if (!stateValue) {
+			stateValue = "US"
+		}
 	}
 
 	const [stateCode, setStateCode] = useState(stateValue);
@@ -492,7 +497,7 @@ function Header (){
 				<div className="col-sm">
 					<h2>cv19.report</h2>
 					<p>
-						COVID-19 visualization & forecasting
+						COVID-19 forecasting
 					</p>
 				</div>
 				<div className="float-right">
