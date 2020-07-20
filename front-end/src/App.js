@@ -541,7 +541,11 @@ function Footer (){
 	}
 	return (
 		<div className={classes.appWrapper}>
-
+			<div className="footer-buttons">
+				<a href="https://support.cv19.report" target="_blank"><button type="button" className="modalButton-0-2-3">Get Updates</button></a>
+				<a href="https://github.com/sponsors/alexanderyoung" target="_blank"><button type="button" className="modalButton-0-2-3">Support</button></a>
+				<a href="https://github.com/alexanderyoung/cv19-report" target="_blank"><button type="button" className="modalButton-0-2-3">GitHub</button></a>
+			</div>
 		</div>
 	);
 }

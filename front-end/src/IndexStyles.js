@@ -55,7 +55,8 @@ const useStyles = createUseStyles({
     },
 
     "input, button": {
-      fontFamily: "inherit"
+      fontFamily: "inherit",
+      margin: "5px"
     },
 
     figure: {
