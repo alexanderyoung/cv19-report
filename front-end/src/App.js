@@ -73,7 +73,6 @@ function SimpleChart(props) {
 		// Cover old format
 		let params = (new URL(document.location)).searchParams;
 		stateValue = params.get("state");
-		console.log(stateValue);
 		if (!stateValue) {
 			stateValue = "US"
 		}
