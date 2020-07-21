@@ -219,7 +219,7 @@ function SimpleChart(props) {
 				<DualChart
 					series={series}
 					title={`${stateCode} - ${positiveIncreaseLatestFormatted} New Pos. Tests`}
-					leftLabel="New cases last 24 hrs"
+					leftLabel="New cases (24 hrs)"
 					leftData="positiveIncrease"
 					leftModel="model_positiveIncrease"
 					leftError="model_positiveIncrease_error"
@@ -365,7 +365,7 @@ function DualChart(props){
 									style={legendStyle}
 									categories={[
 										{ key: "leftData", label: leftLabel, value: leftDataValue === NaN ? '' : leftDataValue},
-										{ key: "leftModel", label: "Projected " + leftLabel, value: rightModelValue === NaN ? '' : rightModelValue},
+										{ key: "leftModel", label: "Projected " + leftLabel, value: leftModelValue === NaN ? '' : leftModelValue},
 									]}
 								/>
 							</div>
