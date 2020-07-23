@@ -501,24 +501,7 @@ function Header (){
 				</div>
 				<div className="float-right">
 				<div className="float-right">
-					<SimpleModal buttonLabel="About">
-						<h2>COVID Data</h2>
-						<p>
-								This tool visualizes daily data from every US state (data from <a href="https://covidtracking.com/data" target="_blank">Covid Tracking Project</a> and creates a time series model forecasting the near term future for a given metric.
-						</p>
-						<p>
-								Every state model is combined into a US model.
-						</p>
-						<p>
-								Daily data is refreshed as soon as it's available, typically sometime after 4 PM EST.
-						</p>
-						<p>
-							The shaded areas represent the 5% and 95% confidence estimates from the model.  If a data point lies outside of this area it is unexpected and may represent a problem with source data or some unexpected sudden change.
-						</p>
-						<p>
-							Developed by Alex Young - <a href="https://github.com/sponsors/alexanderyoung" target="_blank">Support on GitHub</a> - <a href="https://support.cv19.report" target="_blank">Get updates</a>
-						</p>
-					</SimpleModal>
+					<a href="https://support.cv19.report" target="_blank"><button type="button" className="modalButton-0-2-3">Get Updates</button></a>
 				</div>
 				</div>
 			</header>
@@ -541,7 +524,24 @@ function Footer (){
 	return (
 		<div className={classes.appWrapper}>
 			<div className="footer-buttons">
-				<a href="https://support.cv19.report" target="_blank"><button type="button" className="modalButton-0-2-3">Get Updates</button></a>
+					<SimpleModal buttonLabel="About">
+						<h2>COVID Data</h2>
+						<p>
+								This tool visualizes daily data from every US state (data from <a href="https://covidtracking.com/data" target="_blank">Covid Tracking Project</a> and creates a time series model forecasting the near term future for a given metric.
+						</p>
+						<p>
+								Every state model is combined into a US model.
+						</p>
+						<p>
+								Daily data is refreshed as soon as it's available, typically sometime after 4 PM EST.
+						</p>
+						<p>
+							The shaded areas represent the 5% and 95% confidence estimates from the model.  If a data point lies outside of this area it is unexpected and may represent a problem with source data or some unexpected sudden change.
+						</p>
+						<p>
+							Developed by Alex Young - <a href="https://github.com/sponsors/alexanderyoung" target="_blank">Support on GitHub</a> - <a href="https://support.cv19.report" target="_blank">Get updates</a>
+						</p>
+					</SimpleModal>
 				<a href="https://github.com/sponsors/alexanderyoung" target="_blank"><button type="button" className="modalButton-0-2-3">Support</button></a>
 				<a href="https://github.com/alexanderyoung/cv19-report" target="_blank"><button type="button" className="modalButton-0-2-3">GitHub</button></a>
 			</div>
