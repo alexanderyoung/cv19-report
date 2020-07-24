@@ -25,7 +25,7 @@ const apiUrl = process.env.REACT_APP_API_URL
 const f = format(",");
 
 function getLast(res) {
-	let lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease;
+	let lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease, lastpositive_percentage;
 	for (var value of res) {
 		if (value.deathIncrease) {
 			lastDeath = value.deathIncrease;
@@ -37,10 +37,18 @@ function getLast(res) {
 			lastHospitalizedCurrently = value.hospitalizedCurrently;
 		}
 		if (value.positiveIncrease) {
-			lastPositiveIncrease= value.positiveIncrease;
+			lastPositiveIncrease = value.positiveIncrease;
+		}
+		if (value.positive_percentage) {
+			lastpositive_percentage = value.positive_percentage;
 		}
 	}
-	return [lastDeath, lastICU, lastHospitalizedCurrently, lastPositiveIncrease]
+	return [
+		lastDeath, 
+		lastICU, 
+		lastHospitalizedCurrently, 
+		lastPositiveIncrease, 
+		lastpositive_percentage]
 }
 
 function setQueryParams(value) {
@@ -87,6 +95,7 @@ function SimpleChart(props) {
 	const [inIcuCurrentlyLatest, setInIcuCurrentlyLatest] = useState(null); 
 	const [hospitalizedCurrentlyLatest, setHospitalizedCurrentlyLatest] = useState(null);
 	const [positiveIncreaseLatest, setPositiveIncreaseLatest] = useState(null);
+	const [positive_percentageLatest, setpositive_percentageLatest] = useState(null);
 	const [error, setError] = useState();
 	const handleSchemeChange = async ({ value }) => {
 		let selectedState = states.find(state => state.value === value);
@@ -106,6 +115,7 @@ function SimpleChart(props) {
 					setInIcuCurrentlyLatest(lastRes[1]);
 					setHospitalizedCurrentlyLatest(lastRes[2]);
 					setPositiveIncreaseLatest(lastRes[3]);
+					setpositive_percentageLatest(lastRes[4]);
 				},
 				(error) => {
 					setError(error);
@@ -145,6 +155,7 @@ function SimpleChart(props) {
 			"inIcuCurrently", "model_inIcuCurrently", "model_inIcuCurrently_error",
 			"hospitalizedCurrently", "model_hospitalizedCurrently", "model_hospitalizedCurrently_error",
 			"positiveIncrease", "model_positiveIncrease", "model_positiveIncrease_error",
+			"positive_percentage", "model_positive_percentage", "model_positive_percentage_error"
 		],
 		points: data.map(({ 
 			date,
@@ -153,6 +164,7 @@ function SimpleChart(props) {
 			inIcuCurrently, model_inIcuCurrently, model_inIcuCurrently_pct05, model_inIcuCurrently_pct95, 
 			hospitalizedCurrently, model_hospitalizedCurrently, model_hospitalizedCurrently_pct05, model_hospitalizedCurrently_pct95, 
 			positiveIncrease, model_positiveIncrease, model_positiveIncrease_pct05, model_positiveIncrease_pct95, 
+			positive_percentage, model_positive_percentage, model_positive_percentage_pct05, model_positive_percentage_pct95,
 		}) => [
 				date,
 				death,
@@ -170,6 +182,9 @@ function SimpleChart(props) {
 				positiveIncrease,
 				model_positiveIncrease,
 				[model_positiveIncrease_pct05, null, null, model_positiveIncrease_pct95],
+				positive_percentage,
+				model_positive_percentage,
+				[model_positive_percentage_pct05, null, null, model_positive_percentage_pct95],
 			])
 	});
 
@@ -177,6 +192,7 @@ function SimpleChart(props) {
 	const inIcuCurrentlyLatestFormatted = isNaN(inIcuCurrentlyLatest) ? 'N/A': f(inIcuCurrentlyLatest);
 	const actualDeathIncreaseLatestFormatted = isNaN(actualDeathIncreaseLatest) ? 'N/A': f(actualDeathIncreaseLatest);
 	const positiveIncreaseLatestFormatted = isNaN(positiveIncreaseLatest) ? 'N/A': f(positiveIncreaseLatest);
+	const positive_percentageLatestFormatted = isNaN(positive_percentageLatest) ? 'N/A': f(positive_percentageLatest);
 
 
 	if (error) {
@@ -223,10 +239,11 @@ function SimpleChart(props) {
 					leftModel="model_positiveIncrease"
 					leftError="model_positiveIncrease_error"
 					leftDataValueDefault={`${positiveIncreaseLatestFormatted}`}
-					rightLabel={null}
-					rightData="none"
-					rightError="model_deathIncrease_error"
-					rightDataValueDefault={`${actualDeathIncreaseLatestFormatted}`}
+					rightLabel="Percent Positive"
+					rightData="positive_percentage"
+					rightModel="model_positive_percentage"
+					rightError="model_positive_percentage_error"
+					rightDataValueDefault={`${positive_percentageLatestFormatted}`}
 				/>
 				<DualChart
 					series={series}

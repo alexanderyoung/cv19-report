@@ -134,8 +134,13 @@ class Day:
     
     def calculate_positive_percentage(self):
         if self.positiveIncrease and self.totalTestResultsIncrease:
-            self.positive_percentage = (
+            positive_percentage = (
                 self.positiveIncrease / self.totalTestResultsIncrease) * 100
+            # Throw out days where testing oversamples positives
+            if positive_percentage < 50:
+                self.positive_percentage = positive_percentage
+            else:
+                self.positive_percentage = 0
         else:
             self.positive_percentage = 0
 
@@ -308,13 +313,11 @@ def export_data(states, metrics, combined=None, export_type='s3',
 
 
 def prepare_combined(states, metrics, plot=False):
-    state_codes = [state for state in states.keys()]
     dates = set()
     for state in states.values():
         for date in state.days.keys():
             dates.add(date)
     combined = []
-    today = datetime.datetime.today().strftime('%Y%m%d')
     future_limit = int(
             (datetime.datetime.today() + 
              datetime.timedelta(days=30)).strftime('%Y%m%d'))
@@ -325,14 +328,17 @@ def prepare_combined(states, metrics, plot=False):
                 }
 
             for model in metrics:
-                total = sum(
-                    [getattr(state.days[date], model) for
-                     state in states.values() if
-                     state.days.get(date) and 
-                     hasattr(state.days[date], model) and
-                     getattr(state.days[date], model) is not None])
+                points = [getattr(state.days[date], model) for
+                          state in states.values() if
+                          state.days.get(date) and 
+                          hasattr(state.days[date], model) and
+                          getattr(state.days[date], model) is not None]
+                total = sum(points)
                 if total:
-                    day[model] = total
+                    if 'positive_percentage' in model:
+                        day[model] = total / len(points)
+                    else:
+                        day[model] = total
                 else:
                     day[model] = None
 
