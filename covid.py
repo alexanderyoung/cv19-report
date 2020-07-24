@@ -39,6 +39,7 @@ class State:
         for k, v in data.items():
             if v is not None:
                 setattr(day, k, v)
+        day.calculate_positive_percentage()
         self.days[date] = day
         for metric in self.roc_metrics:
             if metric in data.keys():
@@ -130,6 +131,13 @@ class Day:
         self.model_deathIncrease=model_deathIncrease
         self.model_deathIncrease_pct05=model_deathIncrease_pct05
         self.model_deathIncrease_pct95=model_deathIncrease_pct95
+    
+    def calculate_positive_percentage(self):
+        if self.positiveIncrease and self.totalTestResultsIncrease:
+            self.positive_percentage = (
+                self.positiveIncrease / self.totalTestResultsIncrease) * 100
+        else:
+            self.positive_percentage = 0
 
 
 def get_data(state='all', date='daily'):
@@ -198,7 +206,8 @@ def full_update(ignore_history=False, plot=False, export=True, export_type='s3',
         return
 
     selected_models = ['death', 'deathIncrease', 'inIcuCurrently', 
-                       'hospitalizedCurrently', 'positiveIncrease']
+                       'hospitalizedCurrently', 'positiveIncrease',
+                       'positive_percentage']
     agg_models = []
     for model in selected_models:
         agg_models += ['model_{}'.format(model), 
@@ -224,7 +233,8 @@ def full_update(ignore_history=False, plot=False, export=True, export_type='s3',
                   'deathIncrease': day.deathIncrease,
                   'inIcuCurrently': day.inIcuCurrently,
                   'hospitalizedCurrently': day.hospitalizedCurrently,
-                  'positiveIncrease': day.positiveIncrease
+                  'positiveIncrease': day.positiveIncrease,
+                  'positive_percentage': day.positive_percentage,
                   } for day in state.days.values() if hasattr(day, 'death')])
         df.date = pd.to_datetime(df.date)
         df.set_index('date', inplace=True)
@@ -364,7 +374,7 @@ def write_json_s3(filename, json_data, path='api/', s3_bucket='cv19.report'):
             ContentType='application/json')
 
 
-def write_file(filename, json_data):
+def write_file(filename, json_data, path=None, s3_bucket=None):
     with open(filename, 'w') as f:
         json.dump(json_data, f)
 
